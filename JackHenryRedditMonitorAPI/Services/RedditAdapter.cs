@@ -65,7 +65,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
             {
                 Console.WriteLine("appsettings.json configuration required");
                 Console.WriteLine("Application stopped...");
-                return "";
+                return "appsettings.json configuration required.";
             }
 
             try
@@ -124,7 +124,6 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         {
             if (_redditClient != null)
             {
-                //add check here
                 try
                 {
                     var subreddit = _redditClient.Subreddit(subredditString);

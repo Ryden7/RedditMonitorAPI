@@ -76,7 +76,7 @@ namespace TestingAPI
             ILogger log = Logger.Object;
 
             var str = await RedditAdapter.InitializeRedditClient(factory, "", null, "funny", log) ;
-            Assert.AreEqual(str, "appsettings.json configuration required");
+            Assert.AreEqual(str, "appsettings.json configuration required.");
         }
     }
 }
