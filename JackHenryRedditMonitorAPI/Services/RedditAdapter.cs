@@ -9,7 +9,7 @@ using System.Diagnostics;
 namespace JackHenryRedditMonitorAPI.ConfigureAPI
 {
     /// <summary>
-    /// Adapter which uses a 3rd party API to connect to Reddit and connects a REST API to a live worker 
+    /// Adapter which uses a 3rd party API to connect to Reddit and connects a REST API to a live worker.
     /// </summary>
     public static class RedditAdapter
     {
@@ -25,8 +25,8 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         private static Stopwatch sw = new Stopwatch();
 
         /// <summary>
-        /// Generates the authorization token from the app id and app secret from your reddit profile
-        /// (replace in appsettings.json)
+        /// Generates the authorization token from the app id and app secret from your reddit profile.
+        /// (replace in appsettings.json).
         /// </summary>
         /// <returns></returns>
         public static async Task<string> GetAuthorizationToken()
@@ -73,8 +73,13 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
                 _redditClient = new RedditClient(_appId, _appIdSecret, accessToken: accessToken);
                 var subreddit = _redditClient.Subreddit(subredditString);
                 var today = DateTime.Today;
+                Console.WriteLine("## Top Posts for " + today.ToString("D") + Environment.NewLine);
 
-                string pageContent = "## Top Posts for " + today.ToString("D") + Environment.NewLine;
+                //real-time Comment monitoring for the subreddit: extra feature
+                Console.WriteLine("New comments the and posts they're related to: ");
+                subreddit.Comments.GetNew();
+                subreddit.Comments.MonitorNew();
+                subreddit.Comments.NewUpdated += C_NewCommentsUpdated;
 
                 // Get the top 25 posts from the last 24 hours.
                 var posts = subreddit.Posts.GetTop(new TimedCatSrListingInput(t: "day", limit: 25));
@@ -85,18 +90,10 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
                     {
                         if (post.Created >= today && post.Created < today.AddDays(1))
                         {
-                            pageContent += Environment.NewLine + "### [" + post.Title + "](" + post.Permalink + ")" + Environment.NewLine;
                             BuildDictionaryFromTopPosts(post, Initial);
                             IncrementOrAddAuthor(post);
                             post.MonitorPostScore();
                             post.PostScoreUpdated += C_PostScoreUpdated;
-
-                            //real-time Comment monitoring for the subreddit
-                            /*
-                                subreddit.Comments.GetNew();
-                                subreddit.Comments.MonitorNew();
-                                subreddit.Comments.NewUpdated += C_NewCommentsUpdated;
-                            */
                         }
                     }
                 }
@@ -135,7 +132,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
                     PostToUpvotes = new Dictionary<string, int>();
 
                     // Get the top 25 posts from the last 24 hours.
-                    var posts = subreddit.Posts.GetTop(new TimedCatSrListingInput(t: "day", limit: 50));
+                    var posts = subreddit.Posts.GetTop(new TimedCatSrListingInput(t: "day", limit: 25));
 
                     if (posts.Count > 0)
                     {
@@ -143,11 +140,11 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
                         {
                             if (Initial.ContainsKey(post.Title))
                             {
-                                var totalChange = Initial[post.Title];
+                                var startingUpVotes = Initial[post.Title];
 
-                                if (post.UpVotes > totalChange)
+                                if (post.UpVotes > startingUpVotes)
                                 {
-                                    PostToUpvotes.Add(post.Title, post.UpVotes - totalChange);
+                                    PostToUpvotes.Add(post.Title, post.UpVotes - startingUpVotes);
                                 }
                             }
                         }
@@ -181,8 +178,8 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         {
             if (_redditClient != null)
             {
-                var total = 45000 - sw.ElapsedMilliseconds;
-                if (sw.ElapsedMilliseconds > 45000)
+                var total = 50000 - sw.ElapsedMilliseconds;
+                if (sw.ElapsedMilliseconds > 50000)
                 {
                     var PostToUpvotesOrdered = PostToUpvotes.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
                     var UsersToPostsOrdered = UsersToPosts.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
@@ -278,6 +275,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
 
                 if (!NewComments.ContainsKey(post.Title))
                 {
+                    Console.WriteLine("Post: " + post.Title + " : " + "Comment: " + comment.Body);
                     NewComments.Add(post.Title, comment.Body);
                 }
             }

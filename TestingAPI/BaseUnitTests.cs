@@ -9,8 +9,8 @@ namespace TestingAPI
     public class BaseUnitTests
     {
         /// <summary>
-        /// Appsettings configuration
-        /// (prefill with your reddit appId and secret)
+        /// Appsettings configuration.
+        /// (prefill with your reddit appId and secret).
         /// </summary>
         /// <returns></returns>
         public IConfiguration InitConfiguration()
@@ -53,7 +53,6 @@ namespace TestingAPI
             IHttpClientFactory factory = mockFactory.Object;
             ILogger log = Logger.Object;
 
-
             var config = InitConfiguration();
             var AppId = config["MySettings:AppId"];
             var AppSecret = config["MySettings:AppSecret"];
@@ -63,7 +62,7 @@ namespace TestingAPI
         }
 
         /// <summary>
-        /// Test to check if appsettings.json error response is sent back properly
+        /// Test to check if appsettings.json error response is sent back properly.
         /// </summary>
         /// <returns></returns>
         [TestMethod]

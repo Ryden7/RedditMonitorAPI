@@ -16,7 +16,7 @@ namespace JackHenryRedditMonitorAPI.Controllers
         }
 
         /// <summary>
-        /// Controller HTTP GET method used to get the Posts with most up votes and Users with most posts since the application began
+        /// Controller HTTP GET method used to get the Posts with most up votes and Users with most posts since the application began.
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetPollInformation")]
