@@ -20,6 +20,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         private static Dictionary<string, int> Initial = new Dictionary<string, int>();
         private static Dictionary<string, int> UsersToPosts = new Dictionary<string, int>();
         private static Dictionary<string, int> PostToUpvotes = new Dictionary<string, int>();
+        private static Dictionary<string, string> NewComments = new Dictionary<string, string>();
         private static ILogger _logger;
         private static Stopwatch sw = new Stopwatch();
 
@@ -89,6 +90,13 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
                             IncrementOrAddAuthor(post);
                             post.MonitorPostScore();
                             post.PostScoreUpdated += C_PostScoreUpdated;
+
+                            //real-time Comment monitoring for the subreddit
+                            /*
+                                subreddit.Comments.GetNew();
+                                subreddit.Comments.MonitorNew();
+                                subreddit.Comments.NewUpdated += C_NewCommentsUpdated;
+                            */
                         }
                     }
                 }
@@ -111,7 +119,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         }
 
         /// <summary>
-        /// Poll Reddit every 30 seconds and calculate upvote and posts since time started
+        /// Poll Reddit every 30 seconds and calculate upvote and posts since time started.
         /// </summary>
         /// <param name="subredditstring"></param>
         /// <returns></returns>
@@ -166,7 +174,30 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         }
 
         /// <summary>
-        /// Event handler for new added posts
+        /// Function which helps a user grab the current real time information that has been collected since the app started.
+        /// </summary>
+        /// <returns></returns>
+        public static string GetPollInformation()
+        {
+            if (_redditClient != null)
+            {
+                var total = 45000 - sw.ElapsedMilliseconds;
+                if (sw.ElapsedMilliseconds > 45000)
+                {
+                    var PostToUpvotesOrdered = PostToUpvotes.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+                    var UsersToPostsOrdered = UsersToPosts.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+                    var json = JsonConvert.SerializeObject((PostsToUpvotes: PostToUpvotesOrdered, UsersToPosts: UsersToPostsOrdered));
+                    return json;
+                }
+                else
+                    return "Gathering data... Please try again in " + total / 1000 + " seconds.";
+            }
+            else
+                return "Please configure appsettings.json with valid reddit appId and secret";
+        }
+
+        /// <summary>
+        /// Event handler for new added posts.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -191,7 +222,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         }
 
         /// <summary>
-        /// Event Handler for Post Score updates
+        /// Event Handler for Post Score updates.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -206,11 +237,10 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
             {
                 _logger.LogError("Error in Post Score Updated: " + err.Message);
             }
-
         }
 
         /// <summary>
-        /// Build dictionary helper function
+        /// Build dictionary helper function.
         /// </summary>
         /// <param name="post"></param>
         /// <param name="dict"></param>
@@ -220,7 +250,7 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         }
 
         /// <summary>
-        /// Top posts authors and their posts count helper function
+        /// Top posts authors and their posts count helper function.
         /// </summary>
         /// <param name="post"></param>
         private static void IncrementOrAddAuthor(Post post)
@@ -236,27 +266,21 @@ namespace JackHenryRedditMonitorAPI.ConfigureAPI
         }
 
         /// <summary>
-        /// Function which helps a user grab the current real time information that has been collected since the app started
+        /// Event handler to collect any new comments that get added to any post.
         /// </summary>
-        /// <returns></returns>
-        public static string GetPollInformation()
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static void C_NewCommentsUpdated(object sender, CommentsUpdateEventArgs e)
         {
-            if (_redditClient != null)
+            foreach (Comment comment in e.Added)
             {
-                var total = 45000 - sw.ElapsedMilliseconds;
-                if (sw.ElapsedMilliseconds > 45000)
-                {
-                    var PostToUpvotesOrdered = PostToUpvotes.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
-                    var UsersToPostsOrdered = UsersToPosts.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
-                    var json = JsonConvert.SerializeObject((PostsToUpvotes: PostToUpvotesOrdered, UsersToPosts: UsersToPostsOrdered));
-                    return json;
-                }
-                else
-                    return "Gathering data... Please try again in " + total / 1000 + " seconds.";
-            }
-            else
-                return "Please configure appsettings.json with valid reddit appId and secret";
+                var post = comment.GetRoot();
 
+                if (!NewComments.ContainsKey(post.Title))
+                {
+                    NewComments.Add(post.Title, comment.Body);
+                }
+            }
         }
     }
 }
