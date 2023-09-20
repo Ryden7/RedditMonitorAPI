@@ -2,7 +2,8 @@
 
 Subreddit Monitor Web API created by Rizwan Mohammed to monitor any subreddit (defaulted to "funny" for boiler plate demo). The app consumes the top 50 posts from the funny subreddit in near real time using the Reddit 3rd party nuget package and filters it based off of the DateTime the application was started. It keeps track of the following statistics between the time the application starts until it ends:
 
-Posts with most up votes
+Posts with most up votes,
+
 Users with most posts
 
 #Usage
